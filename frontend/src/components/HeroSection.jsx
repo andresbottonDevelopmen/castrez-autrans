@@ -1,20 +1,21 @@
 import { motion } from 'framer-motion';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Play } from 'lucide-react';
 
 const HeroSection = () => {
   return (
     <section className="hero-section" data-testid="hero-section">
-      {/* Video Background */}
+      {/* Video Background - High quality automotive video */}
       <video
         autoPlay
         muted
         loop
         playsInline
         className="hero-video"
-        poster="https://images.pexels.com/photos/35419685/pexels-photo-35419685.jpeg"
+        poster="https://images.pexels.com/photos/3807517/pexels-photo-3807517.jpeg?auto=compress&cs=tinysrgb&w=1920"
       >
+        {/* Premium automotive workshop video */}
         <source
-          src="https://videos.pexels.com/video-files/3173312/3173312-uhd_2560_1440_30fps.mp4"
+          src="https://videos.pexels.com/video-files/5512656/5512656-uhd_2560_1440_30fps.mp4"
           type="video/mp4"
         />
       </video>
