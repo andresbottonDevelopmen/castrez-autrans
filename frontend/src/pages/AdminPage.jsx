@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
-import { GoogleLogin } from '@react-oauth/google';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import axios from 'axios';
-import { Package, Calendar, Tag, LogOut, Menu, X } from 'lucide-react';
+import { Package, Calendar, Tag, LogOut, Menu, X, Users, MapPin, ClipboardList, BarChart3, Lock, Mail, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ProductsManager from '@/components/admin/ProductsManager';
 import AppointmentsManager from '@/components/admin/AppointmentsManager';
 import BannersManager from '@/components/admin/BannersManager';
+import EmployeesManager from '@/components/admin/EmployeesManager';
+import WorkplacesManager from '@/components/admin/WorkplacesManager';
+import AttendanceManager from '@/components/admin/AttendanceManager';
+import ReportsManager from '@/components/admin/ReportsManager';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const LOGO_URL = 'https://customer-assets.emergentagent.com/job_1c5df42d-6505-4d6c-97c6-dd11a75d6657/artifacts/f0cxn3lf_logo%20castrez.avif';
@@ -17,33 +20,89 @@ const AdminPage = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('products');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  // Login form state
+  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginErrors, setLoginErrors] = useState({});
 
   useEffect(() => {
+    // Check for existing session
+    const token = localStorage.getItem('admin_token');
     const savedUser = localStorage.getItem('admin_user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
+    
+    if (token && savedUser) {
+      // Verify token is still valid
+      verifyToken(token, JSON.parse(savedUser));
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
-  const handleGoogleSuccess = async (credentialResponse) => {
+  const verifyToken = async (token, savedUser) => {
     try {
-      const response = await axios.post(`${API}/auth/google`, {
-        credential: credentialResponse.credential
+      await axios.post(`${API}/auth/verify`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      
-      const userData = response.data.user;
-      setUser(userData);
-      localStorage.setItem('admin_user', JSON.stringify(userData));
-      toast.success(`Bienvenido, ${userData.name}`);
+      setUser(savedUser);
     } catch (error) {
-      console.error('Auth error:', error);
-      toast.error('Error al iniciar sesión');
+      // Token invalid, clear storage
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_user');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const validateLoginForm = () => {
+    const errors = {};
+    
+    if (!loginForm.email) {
+      errors.email = 'El correo es obligatorio';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginForm.email)) {
+      errors.email = 'Ingresa un correo válido';
+    }
+    
+    if (!loginForm.password) {
+      errors.password = 'La contraseña es obligatoria';
+    } else if (loginForm.password.length < 6) {
+      errors.password = 'La contraseña debe tener al menos 6 caracteres';
+    }
+    
+    setLoginErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    
+    if (!validateLoginForm()) return;
+    
+    setLoginLoading(true);
+    try {
+      const response = await axios.post(`${API}/auth/login`, loginForm);
+      
+      const { token, user: userData } = response.data;
+      
+      // Save to localStorage
+      localStorage.setItem('admin_token', token);
+      localStorage.setItem('admin_user', JSON.stringify(userData));
+      
+      setUser(userData);
+      toast.success(`¡Bienvenido, ${userData.name}!`);
+    } catch (error) {
+      const message = error.response?.data?.detail || 'Error al iniciar sesión';
+      toast.error(message);
+      setLoginErrors({ form: message });
+    } finally {
+      setLoginLoading(false);
     }
   };
 
   const handleLogout = () => {
     setUser(null);
+    localStorage.removeItem('admin_token');
     localStorage.removeItem('admin_user');
     toast.success('Sesión cerrada');
   };
@@ -64,21 +123,107 @@ const AdminPage = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-card p-8 rounded-2xl max-w-md w-full text-center"
+          className="glass-card p-8 rounded-2xl max-w-md w-full"
         >
-          <img src={LOGO_URL} alt="Castrez Autrans" className="h-20 mx-auto mb-6" />
-          <h1 className="text-2xl font-bold text-white mb-2 font-['Syne']">Panel de Administración</h1>
-          <p className="text-[#A3A3A3] mb-8">Inicia sesión con tu cuenta de Google</p>
-          
-          <div className="flex justify-center" data-testid="google-login-container">
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={() => toast.error('Error al iniciar sesión')}
-              theme="filled_black"
-              size="large"
-              text="signin_with"
-              shape="pill"
-            />
+          {/* Logo */}
+          <div className="text-center mb-8">
+            <img src={LOGO_URL} alt="Castrez Autrans" className="h-16 mx-auto mb-6" />
+            <h1 className="text-2xl font-bold text-white font-['Syne'] mb-2">Panel de Administración</h1>
+            <p className="text-[#A3A3A3]">Ingresa tus credenciales para acceder</p>
+          </div>
+
+          {/* Login Form */}
+          <form onSubmit={handleLogin} className="space-y-6" data-testid="login-form">
+            {/* Email Field */}
+            <div>
+              <label className="text-sm text-[#A3A3A3] mb-2 block">Correo electrónico</label>
+              <div className="relative">
+                <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#666]" />
+                <input
+                  type="email"
+                  value={loginForm.email}
+                  onChange={(e) => {
+                    setLoginForm({ ...loginForm, email: e.target.value });
+                    setLoginErrors({ ...loginErrors, email: null, form: null });
+                  }}
+                  className={`w-full bg-[#1A1A1A] border rounded-xl pl-12 pr-4 py-3 text-white placeholder:text-[#666] transition-colors ${
+                    loginErrors.email ? 'border-red-500' : 'border-[#333] focus:border-[#D4AF37]'
+                  }`}
+                  placeholder="admin@castrezautrans.com"
+                  data-testid="login-email-input"
+                />
+              </div>
+              {loginErrors.email && (
+                <p className="text-red-400 text-sm mt-1">{loginErrors.email}</p>
+              )}
+            </div>
+
+            {/* Password Field */}
+            <div>
+              <label className="text-sm text-[#A3A3A3] mb-2 block">Contraseña</label>
+              <div className="relative">
+                <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#666]" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={loginForm.password}
+                  onChange={(e) => {
+                    setLoginForm({ ...loginForm, password: e.target.value });
+                    setLoginErrors({ ...loginErrors, password: null, form: null });
+                  }}
+                  className={`w-full bg-[#1A1A1A] border rounded-xl pl-12 pr-12 py-3 text-white placeholder:text-[#666] transition-colors ${
+                    loginErrors.password ? 'border-red-500' : 'border-[#333] focus:border-[#D4AF37]'
+                  }`}
+                  placeholder="••••••••"
+                  data-testid="login-password-input"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#666] hover:text-white transition-colors"
+                  data-testid="toggle-password-btn"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              {loginErrors.password && (
+                <p className="text-red-400 text-sm mt-1">{loginErrors.password}</p>
+              )}
+            </div>
+
+            {/* Form Error */}
+            {loginErrors.form && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+                <p className="text-red-400 text-sm text-center">{loginErrors.form}</p>
+              </div>
+            )}
+
+            {/* Submit Button */}
+            <Button
+              type="submit"
+              disabled={loginLoading}
+              className="w-full btn-gold py-4 rounded-xl text-base font-semibold disabled:opacity-50"
+              data-testid="login-submit-btn"
+            >
+              {loginLoading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-5 w-5\" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Iniciando sesión...
+                </span>
+              ) : (
+                'Iniciar Sesión'
+              )}
+            </Button>
+          </form>
+
+          {/* Security Note */}
+          <div className="mt-6 pt-6 border-t border-[#262626]">
+            <p className="text-[#666] text-xs text-center">
+              <Lock size={12} className="inline mr-1" />
+              Conexión segura. Solo personal autorizado.
+            </p>
           </div>
         </motion.div>
       </div>
@@ -89,6 +234,10 @@ const AdminPage = () => {
     { id: 'products', label: 'Productos', icon: Package },
     { id: 'appointments', label: 'Citas', icon: Calendar },
     { id: 'banners', label: 'Promociones', icon: Tag },
+    { id: 'employees', label: 'Empleados', icon: Users },
+    { id: 'workplaces', label: 'Lugares', icon: MapPin },
+    { id: 'attendance', label: 'Asistencia', icon: ClipboardList },
+    { id: 'reports', label: 'Reportes', icon: BarChart3 },
   ];
 
   return (
@@ -154,9 +303,9 @@ const AdminPage = () => {
           <img src={LOGO_URL} alt="Castrez Autrans" className="h-12 mb-8" />
           
           <div className="flex items-center gap-3 mb-8 p-3 bg-[#0F0F0F] rounded-lg">
-            {user.picture && (
-              <img src={user.picture} alt={user.name} className="w-10 h-10 rounded-full" />
-            )}
+            <div className="w-10 h-10 rounded-full bg-[#D4AF37] flex items-center justify-center">
+              <span className="text-black font-bold">A</span>
+            </div>
             <div className="flex-1 min-w-0">
               <p className="text-white text-sm font-medium truncate">{user.name}</p>
               <p className="text-[#666] text-xs truncate">{user.email}</p>
@@ -206,6 +355,10 @@ const AdminPage = () => {
           {activeTab === 'products' && <ProductsManager />}
           {activeTab === 'appointments' && <AppointmentsManager />}
           {activeTab === 'banners' && <BannersManager />}
+          {activeTab === 'employees' && <EmployeesManager />}
+          {activeTab === 'workplaces' && <WorkplacesManager />}
+          {activeTab === 'attendance' && <AttendanceManager />}
+          {activeTab === 'reports' && <ReportsManager />}
         </motion.div>
       </main>
     </div>
@@ -213,5 +366,3 @@ const AdminPage = () => {
 };
 
 export default AdminPage;
-
-const AnimatePresence = motion.div ? require('framer-motion').AnimatePresence : ({ children }) => children;
