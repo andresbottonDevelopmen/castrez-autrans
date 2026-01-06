@@ -23,9 +23,16 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# Google OAuth config
+# Google OAuth config (optional)
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
 GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')
+
+# Admin credentials (simple auth)
+ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'admin@castrezautrans.com')
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'Castrez2024!')
+JWT_SECRET = os.environ.get('JWT_SECRET', 'castrez-autrans-jwt-secret-2024-secure')
+JWT_ALGORITHM = "HS256"
+JWT_EXPIRATION_HOURS = 24
 
 # Create the main app
 app = FastAPI()
