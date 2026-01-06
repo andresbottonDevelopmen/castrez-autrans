@@ -444,7 +444,70 @@ async def get_today_attendance(employee_id: str):
         return deserialize_doc(attendance)
     return None
 
-# ============ GOOGLE AUTH ============
+# ============ ADMIN AUTH (Simple JWT) ============
+
+def create_jwt_token(email: str) -> str:
+    """Create a JWT token for admin user"""
+    expiration = datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRATION_HOURS)
+    payload = {
+        "sub": email,
+        "exp": expiration,
+        "iat": datetime.now(timezone.utc)
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+def verify_jwt_token(token: str) -> dict:
+    """Verify JWT token and return payload"""
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expirado")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Token inválido")
+
+@api_router.post("/auth/login")
+async def admin_login(credentials: AdminLoginRequest):
+    """Admin login with email and password"""
+    # Validate credentials
+    if credentials.email != ADMIN_EMAIL:
+        raise HTTPException(status_code=401, detail="Credenciales incorrectas")
+    
+    if credentials.password != ADMIN_PASSWORD:
+        raise HTTPException(status_code=401, detail="Credenciales incorrectas")
+    
+    # Create JWT token
+    token = create_jwt_token(credentials.email)
+    
+    return {
+        "token": token,
+        "user": {
+            "email": ADMIN_EMAIL,
+            "name": "Administrador",
+            "role": "admin"
+        }
+    }
+
+@api_router.post("/auth/verify")
+async def verify_token(request: Request):
+    """Verify if token is valid"""
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Token no proporcionado")
+    
+    token = auth_header.split(" ")[1]
+    payload = verify_jwt_token(token)
+    
+    return {
+        "valid": True,
+        "user": {
+            "email": payload["sub"],
+            "name": "Administrador",
+            "role": "admin"
+        }
+    }
+
+# ============ GOOGLE AUTH (Optional) ============
 # REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
 
 @api_router.post("/auth/google")
