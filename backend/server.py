@@ -143,6 +143,14 @@ class AdminUser(BaseModel):
 class GoogleAuthRequest(BaseModel):
     credential: str
 
+class AdminLoginRequest(BaseModel):
+    email: str
+    password: str
+
+class AdminLoginResponse(BaseModel):
+    token: str
+    user: dict
+
 # ============ EMPLOYEE MODELS ============
 
 class Workplace(BaseModel):
