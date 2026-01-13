@@ -140,14 +140,14 @@ const AttendanceManager = () => {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <Select
-            value={filters.employee_id}
-            onValueChange={(value) => setFilters({ ...filters, employee_id: value })}
+            value={filters.employee_id || "all"}
+            onValueChange={(value) => setFilters({ ...filters, employee_id: value === "all" ? "" : value })}
           >
             <SelectTrigger className="bg-[#1A1A1A] border-[#333] text-white">
               <SelectValue placeholder="Todos los empleados" />
             </SelectTrigger>
             <SelectContent className="bg-[#1A1A1A] border-[#333]">
-              <SelectItem value="" className="text-white">Todos los empleados</SelectItem>
+              <SelectItem value="all" className="text-white">Todos los empleados</SelectItem>
               {employees.map((emp) => (
                 <SelectItem key={emp.id} value={emp.id} className="text-white">
                   {emp.full_name}
@@ -157,14 +157,14 @@ const AttendanceManager = () => {
           </Select>
 
           <Select
-            value={filters.workplace_id}
-            onValueChange={(value) => setFilters({ ...filters, workplace_id: value })}
+            value={filters.workplace_id || "all"}
+            onValueChange={(value) => setFilters({ ...filters, workplace_id: value === "all" ? "" : value })}
           >
             <SelectTrigger className="bg-[#1A1A1A] border-[#333] text-white">
               <SelectValue placeholder="Todos los lugares" />
             </SelectTrigger>
             <SelectContent className="bg-[#1A1A1A] border-[#333]">
-              <SelectItem value="" className="text-white">Todos los lugares</SelectItem>
+              <SelectItem value="all" className="text-white">Todos los lugares</SelectItem>
               {workplaces.map((wp) => (
                 <SelectItem key={wp.id} value={wp.id} className="text-white">
                   {wp.name}
