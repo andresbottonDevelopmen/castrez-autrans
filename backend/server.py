@@ -519,12 +519,62 @@ async def verify_token(request: Request):
     token = auth_header.split(" ")[1]
     payload = verify_jwt_token(token)
     
+    # Check if it's an employee token
+    if payload.get("role") == "employee":
+        employee = await db.employees.find_one({"id": payload.get("employee_id")}, {"_id": 0})
+        if employee:
+            return {
+                "valid": True,
+                "user": {
+                    "id": employee["id"],
+                    "name": employee["full_name"],
+                    "username": employee.get("username"),
+                    "role": "employee",
+                    "workplace_id": employee.get("workplace_id"),
+                    "workplace_name": employee.get("workplace_name")
+                }
+            }
+    
     return {
         "valid": True,
         "user": {
             "email": payload["sub"],
             "name": "Administrador",
             "role": "admin"
+        }
+    }
+
+@api_router.post("/auth/employee/login")
+async def employee_login(credentials: EmployeeLoginRequest):
+    """Employee login with username and password"""
+    # Find employee by username
+    employee = await db.employees.find_one({
+        "username": credentials.username,
+        "is_active": True
+    }, {"_id": 0})
+    
+    if not employee:
+        raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
+    
+    if employee.get("password") != credentials.password:
+        raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
+    
+    # Create JWT token for employee
+    token = create_jwt_token(
+        email=credentials.username,
+        role="employee",
+        employee_id=employee["id"]
+    )
+    
+    return {
+        "token": token,
+        "user": {
+            "id": employee["id"],
+            "name": employee["full_name"],
+            "username": employee["username"],
+            "role": "employee",
+            "workplace_id": employee.get("workplace_id"),
+            "workplace_name": employee.get("workplace_name")
         }
     }
 
