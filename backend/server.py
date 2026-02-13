@@ -865,6 +865,41 @@ async def get_all_attendance(
     attendance = await db.attendance.find(query, {"_id": 0}).sort("date", -1).to_list(1000)
     return [deserialize_doc(a) for a in attendance]
 
+@api_router.post("/admin/attendance")
+async def create_attendance(input: AttendanceCreate):
+    """Admin creates attendance manually"""
+    # Get employee info
+    employee = await db.employees.find_one({"id": input.employee_id}, {"_id": 0})
+    if not employee:
+        raise HTTPException(status_code=404, detail="Empleado no encontrado")
+    
+    # Get workplace info
+    workplace = await db.workplaces.find_one({"id": input.workplace_id}, {"_id": 0})
+    workplace_name = workplace["name"] if workplace else "Desconocido"
+    
+    # Calculate hours if both check_in and check_out provided
+    hours_worked = None
+    if input.check_in and input.check_out:
+        hours_worked = calculate_hours(input.check_in, input.check_out)
+    
+    attendance = Attendance(
+        employee_id=input.employee_id,
+        employee_name=employee["full_name"],
+        date=input.date,
+        check_in=input.check_in,
+        check_out=input.check_out,
+        workplace_id=input.workplace_id,
+        workplace_name=workplace_name,
+        hours_worked=hours_worked,
+        status=input.status,
+        notes=input.notes
+    )
+    
+    doc = serialize_doc(attendance.model_dump())
+    await db.attendance.insert_one(doc)
+    
+    return attendance
+
 @api_router.put("/admin/attendance/{attendance_id}")
 async def update_attendance(attendance_id: str, input: AttendanceUpdate):
     update_data = {k: v for k, v in input.model_dump().items() if v is not None}
