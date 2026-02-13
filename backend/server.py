@@ -465,11 +465,13 @@ async def get_today_attendance(employee_id: str):
 
 # ============ ADMIN AUTH (Simple JWT) ============
 
-def create_jwt_token(email: str) -> str:
-    """Create a JWT token for admin user"""
+def create_jwt_token(email: str, role: str = "admin", employee_id: str = None) -> str:
+    """Create a JWT token for admin or employee"""
     expiration = datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRATION_HOURS)
     payload = {
         "sub": email,
+        "role": role,
+        "employee_id": employee_id,
         "exp": expiration,
         "iat": datetime.now(timezone.utc)
     }
@@ -496,7 +498,7 @@ async def admin_login(credentials: AdminLoginRequest):
         raise HTTPException(status_code=401, detail="Credenciales incorrectas")
     
     # Create JWT token
-    token = create_jwt_token(credentials.email)
+    token = create_jwt_token(credentials.email, role="admin")
     
     return {
         "token": token,
