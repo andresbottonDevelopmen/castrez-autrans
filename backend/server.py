@@ -180,6 +180,8 @@ class Employee(BaseModel):
     position: str
     workplace_id: str
     workplace_name: Optional[str] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
     is_active: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -188,6 +190,8 @@ class EmployeeCreate(BaseModel):
     full_name: str
     position: str
     workplace_id: str
+    username: Optional[str] = None
+    password: Optional[str] = None
     is_active: bool = True
 
 class EmployeeUpdate(BaseModel):
@@ -195,7 +199,22 @@ class EmployeeUpdate(BaseModel):
     full_name: Optional[str] = None
     position: Optional[str] = None
     workplace_id: Optional[str] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
     is_active: Optional[bool] = None
+
+class EmployeeLoginRequest(BaseModel):
+    username: str
+    password: str
+
+class AttendanceCreate(BaseModel):
+    employee_id: str
+    workplace_id: str
+    date: str
+    check_in: Optional[str] = None
+    check_out: Optional[str] = None
+    status: str = "present"
+    notes: Optional[str] = None
 
 class Attendance(BaseModel):
     model_config = ConfigDict(extra="ignore")
