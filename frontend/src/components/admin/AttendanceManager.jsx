@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Search, Calendar, MapPin, Clock, Download, Pencil, Trash2, Eye, Filter } from 'lucide-react';
+import { Search, Calendar, MapPin, Clock, Download, Pencil, Trash2, Eye, Filter, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -30,12 +30,28 @@ const AttendanceManager = () => {
   const [selectedAttendance, setSelectedAttendance] = useState(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
   const [editData, setEditData] = useState({ check_in: '', check_out: '', status: '', notes: '' });
+  const [createData, setCreateData] = useState({
+    employee_id: '',
+    workplace_id: '',
+    date: format(new Date(), 'yyyy-MM-dd'),
+    check_in: '',
+    check_out: '',
+    status: 'present',
+    notes: ''
+  });
 
   const fetchData = async () => {
     try {
+      const params = {};
+      if (filters.employee_id) params.employee_id = filters.employee_id;
+      if (filters.workplace_id) params.workplace_id = filters.workplace_id;
+      if (filters.date_from) params.date_from = filters.date_from;
+      if (filters.date_to) params.date_to = filters.date_to;
+
       const [attRes, empRes, wpRes] = await Promise.all([
-        axios.get(`${API}/admin/attendance`, { params: filters }),
+        axios.get(`${API}/admin/attendance`, { params }),
         axios.get(`${API}/admin/employees`),
         axios.get(`${API}/admin/workplaces`)
       ]);
@@ -57,6 +73,31 @@ const AttendanceManager = () => {
   const applyFilters = () => {
     setLoading(true);
     fetchData();
+  };
+
+  const handleCreate = async () => {
+    if (!createData.employee_id || !createData.workplace_id || !createData.date) {
+      toast.error('Completa empleado, lugar y fecha');
+      return;
+    }
+
+    try {
+      await axios.post(`${API}/admin/attendance`, createData);
+      toast.success('Asistencia registrada');
+      setCreateOpen(false);
+      setCreateData({
+        employee_id: '',
+        workplace_id: '',
+        date: format(new Date(), 'yyyy-MM-dd'),
+        check_in: '',
+        check_out: '',
+        status: 'present',
+        notes: ''
+      });
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al crear asistencia');
+    }
   };
 
   const handleDelete = async (attendanceId) => {
@@ -95,8 +136,12 @@ const AttendanceManager = () => {
 
   const exportToExcel = async () => {
     try {
+      const params = {};
+      if (filters.date_from) params.date_from = filters.date_from;
+      if (filters.date_to) params.date_to = filters.date_to;
+
       const response = await axios.get(`${API}/admin/reports/attendance/excel`, {
-        params: filters,
+        params,
         responseType: 'blob'
       });
       
@@ -126,10 +171,139 @@ const AttendanceManager = () => {
           <p className="text-[#A3A3A3]">Control de asistencia del equipo</p>
         </div>
         
-        <Button onClick={exportToExcel} className="bg-green-600 hover:bg-green-500 rounded-full" data-testid="export-excel-btn">
-          <Download size={18} className="mr-2" />
-          Exportar Excel
-        </Button>
+        <div className="flex gap-3">
+          {/* Create Attendance Button */}
+          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+            <DialogTrigger asChild>
+              <Button className="btn-gold rounded-full" data-testid="create-attendance-btn">
+                <Plus size={18} className="mr-2" />
+                Registrar Asistencia
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-[#0F0F0F] border-[#262626] max-w-md">
+              <DialogHeader>
+                <DialogTitle className="text-white font-['Syne']">Registrar Asistencia Manual</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
+                {/* Employee Select */}
+                <div>
+                  <label className="text-sm text-[#A3A3A3] mb-1 block">Empleado *</label>
+                  <Select
+                    value={createData.employee_id}
+                    onValueChange={(value) => setCreateData({ ...createData, employee_id: value })}
+                  >
+                    <SelectTrigger className="bg-[#1A1A1A] border-[#333] text-white" data-testid="create-employee-select">
+                      <SelectValue placeholder="Seleccionar empleado" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1A1A1A] border-[#333]">
+                      {employees.filter(e => e.is_active).map((emp) => (
+                        <SelectItem key={emp.id} value={emp.id} className="text-white">
+                          {emp.full_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Workplace Select */}
+                <div>
+                  <label className="text-sm text-[#A3A3A3] mb-1 block">Lugar de Trabajo *</label>
+                  <Select
+                    value={createData.workplace_id}
+                    onValueChange={(value) => setCreateData({ ...createData, workplace_id: value })}
+                  >
+                    <SelectTrigger className="bg-[#1A1A1A] border-[#333] text-white" data-testid="create-workplace-select">
+                      <SelectValue placeholder="Seleccionar lugar" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1A1A1A] border-[#333]">
+                      {workplaces.filter(w => w.is_active).map((wp) => (
+                        <SelectItem key={wp.id} value={wp.id} className="text-white">
+                          {wp.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Date */}
+                <div>
+                  <label className="text-sm text-[#A3A3A3] mb-1 block">Fecha *</label>
+                  <input
+                    type="date"
+                    value={createData.date}
+                    onChange={(e) => setCreateData({ ...createData, date: e.target.value })}
+                    className="w-full bg-[#1A1A1A] border border-[#333] rounded-lg px-4 py-2 text-white"
+                    data-testid="create-date-input"
+                  />
+                </div>
+
+                {/* Check In / Check Out */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm text-[#A3A3A3] mb-1 block">Hora Entrada</label>
+                    <input
+                      type="time"
+                      value={createData.check_in}
+                      onChange={(e) => setCreateData({ ...createData, check_in: e.target.value })}
+                      className="w-full bg-[#1A1A1A] border border-[#333] rounded-lg px-4 py-2 text-white"
+                      data-testid="create-checkin-input"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-[#A3A3A3] mb-1 block">Hora Salida</label>
+                    <input
+                      type="time"
+                      value={createData.check_out}
+                      onChange={(e) => setCreateData({ ...createData, check_out: e.target.value })}
+                      className="w-full bg-[#1A1A1A] border border-[#333] rounded-lg px-4 py-2 text-white"
+                      data-testid="create-checkout-input"
+                    />
+                  </div>
+                </div>
+
+                {/* Status */}
+                <div>
+                  <label className="text-sm text-[#A3A3A3] mb-1 block">Estado</label>
+                  <Select
+                    value={createData.status}
+                    onValueChange={(value) => setCreateData({ ...createData, status: value })}
+                  >
+                    <SelectTrigger className="bg-[#1A1A1A] border-[#333] text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1A1A1A] border-[#333]">
+                      <SelectItem value="present" className="text-white">Puntual</SelectItem>
+                      <SelectItem value="late" className="text-white">Tardío</SelectItem>
+                      <SelectItem value="absent" className="text-white">Ausente</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <label className="text-sm text-[#A3A3A3] mb-1 block">Notas</label>
+                  <textarea
+                    value={createData.notes}
+                    onChange={(e) => setCreateData({ ...createData, notes: e.target.value })}
+                    className="w-full bg-[#1A1A1A] border border-[#333] rounded-lg px-4 py-2 text-white"
+                    rows={2}
+                    placeholder="Observaciones opcionales..."
+                    data-testid="create-notes-input"
+                  />
+                </div>
+
+                <Button onClick={handleCreate} className="w-full btn-gold rounded-lg" data-testid="save-attendance-btn">
+                  Guardar Asistencia
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Button onClick={exportToExcel} className="bg-green-600 hover:bg-green-500 rounded-full" data-testid="export-excel-btn">
+            <Download size={18} className="mr-2" />
+            Exportar Excel
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -204,6 +378,7 @@ const AttendanceManager = () => {
         <div className="text-center py-12">
           <Calendar size={48} className="mx-auto text-[#333] mb-4" />
           <p className="text-[#A3A3A3]">No hay registros de asistencia</p>
+          <p className="text-[#666] text-sm mt-2">Usa el botón "Registrar Asistencia" para añadir registros</p>
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -242,6 +417,7 @@ const AttendanceManager = () => {
                         onClick={() => viewDetails(att)}
                         className="p-2 text-[#A3A3A3] hover:text-white hover:bg-[#1A1A1A] rounded-lg"
                         title="Ver detalles"
+                        data-testid={`view-attendance-${att.id}`}
                       >
                         <Eye size={16} />
                       </button>
@@ -249,6 +425,7 @@ const AttendanceManager = () => {
                         onClick={() => handleEdit(att)}
                         className="p-2 text-[#A3A3A3] hover:text-white hover:bg-[#1A1A1A] rounded-lg"
                         title="Editar"
+                        data-testid={`edit-attendance-${att.id}`}
                       >
                         <Pencil size={16} />
                       </button>
@@ -256,6 +433,7 @@ const AttendanceManager = () => {
                         onClick={() => handleDelete(att.id)}
                         className="p-2 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-lg"
                         title="Eliminar"
+                        data-testid={`delete-attendance-${att.id}`}
                       >
                         <Trash2 size={16} />
                       </button>
@@ -292,6 +470,14 @@ const AttendanceManager = () => {
                 <div>
                   <p className="text-[#666] text-sm">Salida</p>
                   <p className="text-red-400 font-mono">{selectedAttendance.check_out || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-[#666] text-sm">Horas Trabajadas</p>
+                  <p className="text-[#D4AF37] font-mono">{selectedAttendance.hours_worked || 0}h</p>
+                </div>
+                <div>
+                  <p className="text-[#666] text-sm">Lugar</p>
+                  <p className="text-white">{selectedAttendance.workplace_name}</p>
                 </div>
               </div>
 
@@ -333,6 +519,13 @@ const AttendanceManager = () => {
                       </a>
                     </div>
                   )}
+                </div>
+              )}
+
+              {selectedAttendance.notes && (
+                <div className="pt-4 border-t border-[#262626]">
+                  <p className="text-[#666] text-sm">Notas</p>
+                  <p className="text-white">{selectedAttendance.notes}</p>
                 </div>
               )}
             </div>
