@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Pencil, Trash2, Search, Users, MapPin } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Users, MapPin, Key, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
@@ -27,11 +27,14 @@ const EmployeesManager = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     internal_id: '',
     full_name: '',
     position: '',
     workplace_id: '',
+    username: '',
+    password: '',
     is_active: true,
   });
 
@@ -58,11 +61,27 @@ const EmployeesManager = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Validation
+    if (!formData.internal_id || !formData.full_name || !formData.position || !formData.workplace_id) {
+      toast.error('Completa todos los campos obligatorios');
+      return;
+    }
+
     try {
       if (editingEmployee) {
-        await axios.put(`${API}/admin/employees/${editingEmployee.id}`, formData);
+        // Only send password if it was changed
+        const updateData = { ...formData };
+        if (!updateData.password) {
+          delete updateData.password;
+        }
+        await axios.put(`${API}/admin/employees/${editingEmployee.id}`, updateData);
         toast.success('Empleado actualizado');
       } else {
+        // Require username and password for new employees
+        if (!formData.username || !formData.password) {
+          toast.error('El usuario y contraseña son obligatorios para nuevos empleados');
+          return;
+        }
         await axios.post(`${API}/admin/employees`, formData);
         toast.success('Empleado creado');
       }
@@ -96,6 +115,8 @@ const EmployeesManager = () => {
       full_name: employee.full_name,
       position: employee.position,
       workplace_id: employee.workplace_id,
+      username: employee.username || '',
+      password: '', // Don't show existing password
       is_active: employee.is_active,
     });
     setDialogOpen(true);
@@ -115,11 +136,14 @@ const EmployeesManager = () => {
 
   const resetForm = () => {
     setEditingEmployee(null);
+    setShowPassword(false);
     setFormData({
       internal_id: '',
       full_name: '',
       position: '',
       workplace_id: '',
+      username: '',
+      password: '',
       is_active: true,
     });
   };
@@ -129,10 +153,21 @@ const EmployeesManager = () => {
     setFormData({ ...formData, internal_id: id });
   };
 
+  const generateUsername = () => {
+    if (formData.full_name) {
+      const username = formData.full_name.toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, '.')
+        .replace(/[^a-z.]/g, '');
+      setFormData({ ...formData, username });
+    }
+  };
+
   const filteredEmployees = employees.filter((e) =>
     e.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     e.internal_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    e.position.toLowerCase().includes(searchQuery.toLowerCase())
+    e.position.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (e.username && e.username.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   return (
@@ -153,13 +188,14 @@ const EmployeesManager = () => {
               Añadir Empleado
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-[#0F0F0F] border-[#262626] max-w-lg">
+          <DialogContent className="bg-[#0F0F0F] border-[#262626] max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-white font-['Syne']">
                 {editingEmployee ? 'Editar Empleado' : 'Nuevo Empleado'}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+              {/* Internal ID */}
               <div>
                 <label className="text-sm text-[#A3A3A3] mb-1 block">ID Interno *</label>
                 <div className="flex gap-2">
@@ -177,6 +213,8 @@ const EmployeesManager = () => {
                   </Button>
                 </div>
               </div>
+
+              {/* Full Name */}
               <div>
                 <label className="text-sm text-[#A3A3A3] mb-1 block">Nombre Completo *</label>
                 <input
@@ -184,10 +222,13 @@ const EmployeesManager = () => {
                   value={formData.full_name}
                   onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                   className="w-full bg-[#1A1A1A] border border-[#333] rounded-lg px-4 py-2 text-white"
+                  placeholder="Juan García López"
                   required
                   data-testid="employee-name-input"
                 />
               </div>
+
+              {/* Position */}
               <div>
                 <label className="text-sm text-[#A3A3A3] mb-1 block">Cargo *</label>
                 <Select
@@ -206,6 +247,8 @@ const EmployeesManager = () => {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Workplace */}
               <div>
                 <label className="text-sm text-[#A3A3A3] mb-1 block">Lugar de Trabajo *</label>
                 <Select
@@ -224,7 +267,62 @@ const EmployeesManager = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center justify-between">
+
+              {/* Credentials Section */}
+              <div className="pt-4 border-t border-[#262626]">
+                <div className="flex items-center gap-2 mb-4">
+                  <Key size={18} className="text-[#D4AF37]" />
+                  <span className="text-white font-medium">Credenciales de Acceso</span>
+                </div>
+
+                {/* Username */}
+                <div className="mb-4">
+                  <label className="text-sm text-[#A3A3A3] mb-1 block">
+                    Usuario {!editingEmployee && '*'}
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={formData.username}
+                      onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                      className="flex-1 bg-[#1A1A1A] border border-[#333] rounded-lg px-4 py-2 text-white"
+                      placeholder="juan.garcia"
+                      data-testid="employee-username-input"
+                    />
+                    <Button type="button" variant="outline" onClick={generateUsername} className="border-[#333]">
+                      Auto
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Password */}
+                <div>
+                  <label className="text-sm text-[#A3A3A3] mb-1 block">
+                    Contraseña {!editingEmployee && '*'}
+                    {editingEmployee && <span className="text-[#666]"> (dejar vacío para no cambiar)</span>}
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      className="w-full bg-[#1A1A1A] border border-[#333] rounded-lg px-4 pr-12 py-2 text-white"
+                      placeholder="••••••••"
+                      data-testid="employee-password-input"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#666] hover:text-white"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Active Status */}
+              <div className="flex items-center justify-between pt-4">
                 <label className="text-white">Estado activo</label>
                 <Switch
                   checked={formData.is_active}
@@ -232,6 +330,7 @@ const EmployeesManager = () => {
                   data-testid="employee-active-switch"
                 />
               </div>
+
               <Button type="submit" className="w-full btn-gold rounded-lg" data-testid="save-employee-btn">
                 {editingEmployee ? 'Actualizar' : 'Crear'} Empleado
               </Button>
@@ -245,7 +344,7 @@ const EmployeesManager = () => {
         <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#666]" />
         <input
           type="text"
-          placeholder="Buscar por nombre, ID o cargo..."
+          placeholder="Buscar por nombre, ID, cargo o usuario..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full bg-[#0F0F0F] border border-[#262626] rounded-lg pl-12 pr-4 py-3 text-white"
@@ -268,8 +367,8 @@ const EmployeesManager = () => {
           <p className="text-2xl font-bold text-red-400">{employees.filter(e => !e.is_active).length}</p>
         </div>
         <div className="bg-[#0F0F0F] border border-[#262626] rounded-xl p-4">
-          <p className="text-[#666] text-sm">Lugares</p>
-          <p className="text-2xl font-bold text-[#D4AF37]">{workplaces.length}</p>
+          <p className="text-[#666] text-sm">Con acceso</p>
+          <p className="text-2xl font-bold text-[#D4AF37]">{employees.filter(e => e.username).length}</p>
         </div>
       </div>
 
@@ -290,6 +389,7 @@ const EmployeesManager = () => {
                 <th>Nombre</th>
                 <th>Cargo</th>
                 <th>Lugar</th>
+                <th>Usuario</th>
                 <th>Estado</th>
                 <th>Acciones</th>
               </tr>
@@ -314,6 +414,13 @@ const EmployeesManager = () => {
                       <MapPin size={14} />
                       {employee.workplace_name || 'Sin asignar'}
                     </div>
+                  </td>
+                  <td>
+                    {employee.username ? (
+                      <span className="text-[#D4AF37] font-mono text-sm">{employee.username}</span>
+                    ) : (
+                      <span className="text-[#666] text-sm">Sin usuario</span>
+                    )}
                   </td>
                   <td>
                     <button
