@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Clock, MapPin, LogIn, LogOut, Search, CheckCircle, AlertCircle, User } from 'lucide-react';
+import { Clock, MapPin, LogIn, LogOut, CheckCircle, AlertCircle, User, Lock, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
@@ -10,16 +10,20 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const LOGO_URL = 'https://customer-assets.emergentagent.com/job_1c5df42d-6505-4d6c-97c6-dd11a75d6657/artifacts/f0cxn3lf_logo%20castrez.avif';
 
 const AttendancePage = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [todayAttendance, setTodayAttendance] = useState(null);
   const [workplaces, setWorkplaces] = useState([]);
   const [selectedWorkplace, setSelectedWorkplace] = useState('');
   const [location, setLocation] = useState({ lat: null, lng: null });
   const [locationError, setLocationError] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Login form
+  const [loginForm, setLoginForm] = useState({ username: '', password: '' });
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Update time every second
   useEffect(() => {
@@ -27,25 +31,62 @@ const AttendancePage = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Fetch workplaces
+  // Check for existing session
   useEffect(() => {
-    const fetchWorkplaces = async () => {
-      try {
-        const response = await axios.get(`${API}/workplaces/active`);
-        setWorkplaces(response.data);
-        if (response.data.length > 0) {
-          setSelectedWorkplace(response.data[0].id);
-        }
-      } catch (error) {
-        console.error('Error fetching workplaces:', error);
-      }
-    };
-    fetchWorkplaces();
+    const token = localStorage.getItem('employee_token');
+    const savedUser = localStorage.getItem('employee_user');
+    
+    if (token && savedUser) {
+      verifyToken(token, JSON.parse(savedUser));
+    } else {
+      setLoading(false);
+    }
   }, []);
+
+  const verifyToken = async (token, savedUser) => {
+    try {
+      const response = await axios.post(`${API}/auth/verify`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data.user.role === 'employee') {
+        setUser(response.data.user);
+        fetchWorkplaces();
+        fetchTodayAttendance(response.data.user.id);
+      }
+    } catch (error) {
+      localStorage.removeItem('employee_token');
+      localStorage.removeItem('employee_user');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch workplaces
+  const fetchWorkplaces = async () => {
+    try {
+      const response = await axios.get(`${API}/workplaces/active`);
+      setWorkplaces(response.data);
+      if (response.data.length > 0) {
+        setSelectedWorkplace(response.data[0].id);
+      }
+    } catch (error) {
+      console.error('Error fetching workplaces:', error);
+    }
+  };
+
+  // Fetch today's attendance
+  const fetchTodayAttendance = async (employeeId) => {
+    try {
+      const response = await axios.get(`${API}/attendance/today/${employeeId}`);
+      setTodayAttendance(response.data);
+    } catch (error) {
+      console.error('Error fetching attendance:', error);
+    }
+  };
 
   // Get geolocation
   useEffect(() => {
-    if (navigator.geolocation) {
+    if (user && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           setLocation({
@@ -60,64 +101,55 @@ const AttendancePage = () => {
         },
         { enableHighAccuracy: true }
       );
-    } else {
-      setLocationError('Geolocalización no soportada');
     }
-  }, []);
+  }, [user]);
 
-  // Search employees
-  const searchEmployees = useCallback(async (query) => {
-    if (query.length < 2) {
-      setSearchResults([]);
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    
+    if (!loginForm.username || !loginForm.password) {
+      toast.error('Ingresa usuario y contraseña');
       return;
     }
 
+    setLoginLoading(true);
     try {
-      const response = await axios.get(`${API}/employees/search?q=${encodeURIComponent(query)}`);
-      setSearchResults(response.data);
+      const response = await axios.post(`${API}/auth/employee/login`, loginForm);
+      const { token, user: userData } = response.data;
+      
+      localStorage.setItem('employee_token', token);
+      localStorage.setItem('employee_user', JSON.stringify(userData));
+      
+      setUser(userData);
+      fetchWorkplaces();
+      fetchTodayAttendance(userData.id);
+      toast.success(`¡Bienvenido, ${userData.name}!`);
     } catch (error) {
-      console.error('Error searching employees:', error);
+      toast.error(error.response?.data?.detail || 'Usuario o contraseña incorrectos');
+    } finally {
+      setLoginLoading(false);
     }
-  }, []);
+  };
 
-  useEffect(() => {
-    const debounce = setTimeout(() => {
-      searchEmployees(searchQuery);
-    }, 300);
-    return () => clearTimeout(debounce);
-  }, [searchQuery, searchEmployees]);
-
-  // Check today's attendance when employee selected
-  useEffect(() => {
-    if (selectedEmployee) {
-      const checkTodayAttendance = async () => {
-        try {
-          const response = await axios.get(`${API}/attendance/today/${selectedEmployee.id}`);
-          setTodayAttendance(response.data);
-        } catch (error) {
-          console.error('Error checking attendance:', error);
-        }
-      };
-      checkTodayAttendance();
-    }
-  }, [selectedEmployee]);
-
-  const handleSelectEmployee = (employee) => {
-    setSelectedEmployee(employee);
-    setSearchQuery('');
-    setSearchResults([]);
+  const handleLogout = () => {
+    setUser(null);
+    setTodayAttendance(null);
+    localStorage.removeItem('employee_token');
+    localStorage.removeItem('employee_user');
+    setLoginForm({ username: '', password: '' });
+    toast.success('Sesión cerrada');
   };
 
   const handleCheckIn = async () => {
-    if (!selectedEmployee || !selectedWorkplace) {
-      toast.error('Selecciona un empleado y lugar de trabajo');
+    if (!selectedWorkplace) {
+      toast.error('Selecciona un lugar de trabajo');
       return;
     }
 
-    setLoading(true);
+    setActionLoading(true);
     try {
       const response = await axios.post(`${API}/attendance/check-in`, {
-        employee_id: selectedEmployee.id,
+        employee_id: user.id,
         workplace_id: selectedWorkplace,
         latitude: location.lat,
         longitude: location.lng
@@ -128,14 +160,14 @@ const AttendancePage = () => {
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Error al registrar entrada');
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   };
 
   const handleCheckOut = async () => {
     if (!todayAttendance) return;
 
-    setLoading(true);
+    setActionLoading(true);
     try {
       const response = await axios.post(`${API}/attendance/check-out`, {
         attendance_id: todayAttendance.id,
@@ -152,15 +184,19 @@ const AttendancePage = () => {
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Error al registrar salida');
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   };
 
-  const resetSelection = () => {
-    setSelectedEmployee(null);
-    setTodayAttendance(null);
-    setSearchQuery('');
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+        <div className="animate-pulse">
+          <img src={LOGO_URL} alt="Castrez" className="h-16 opacity-50" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#050505] flex flex-col" data-testid="attendance-page">
@@ -186,70 +222,77 @@ const AttendancePage = () => {
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-lg"
         >
-          {!selectedEmployee ? (
-            /* Search Employee */
+          {!user ? (
+            /* Login Form */
             <div className="glass-card rounded-2xl p-8">
               <div className="text-center mb-8">
                 <div className="w-20 h-20 rounded-full bg-[#D4AF37]/10 flex items-center justify-center mx-auto mb-4">
                   <User size={40} className="text-[#D4AF37]" />
                 </div>
                 <h1 className="text-2xl font-bold text-white font-['Syne'] mb-2">Control de Asistencia</h1>
-                <p className="text-[#A3A3A3]">Busca tu nombre para registrar tu asistencia</p>
+                <p className="text-[#A3A3A3]">Ingresa con tu usuario y contraseña</p>
               </div>
 
-              <div className="relative">
-                <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#666]" />
-                <input
-                  type="text"
-                  placeholder="Escribe tu nombre..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-[#1A1A1A] border border-[#333] rounded-xl pl-12 pr-4 py-4 text-white text-lg placeholder:text-[#666]"
-                  autoFocus
-                  data-testid="employee-search-input"
-                />
-
-                {/* Search Results */}
-                {searchResults.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-[#1A1A1A] border border-[#333] rounded-xl overflow-hidden z-10">
-                    {searchResults.map((employee) => (
-                      <button
-                        key={employee.id}
-                        onClick={() => handleSelectEmployee(employee)}
-                        className="w-full px-4 py-3 text-left hover:bg-[#262626] transition-colors border-b border-[#262626] last:border-0"
-                        data-testid={`employee-result-${employee.id}`}
-                      >
-                        <p className="text-white font-medium">{employee.full_name}</p>
-                        <p className="text-[#666] text-sm">{employee.position} • {employee.workplace_name}</p>
-                      </button>
-                    ))}
+              <form onSubmit={handleLogin} className="space-y-6" data-testid="employee-login-form">
+                <div>
+                  <label className="text-sm text-[#A3A3A3] mb-2 block">Usuario</label>
+                  <div className="relative">
+                    <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#666]" />
+                    <input
+                      type="text"
+                      value={loginForm.username}
+                      onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
+                      className="w-full bg-[#1A1A1A] border border-[#333] rounded-xl pl-12 pr-4 py-3 text-white placeholder:text-[#666] focus:border-[#D4AF37] transition-colors"
+                      placeholder="Tu usuario"
+                      data-testid="employee-username-input"
+                    />
                   </div>
-                )}
-              </div>
+                </div>
 
-              {/* Location Status */}
-              <div className="mt-6 flex items-center justify-center gap-2 text-sm">
-                <MapPin size={16} className={location.lat ? 'text-green-400' : 'text-red-400'} />
-                {location.lat ? (
-                  <span className="text-green-400">Ubicación detectada</span>
-                ) : (
-                  <span className="text-red-400">{locationError || 'Obteniendo ubicación...'}</span>
-                )}
-              </div>
+                <div>
+                  <label className="text-sm text-[#A3A3A3] mb-2 block">Contraseña</label>
+                  <div className="relative">
+                    <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#666]" />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={loginForm.password}
+                      onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                      className="w-full bg-[#1A1A1A] border border-[#333] rounded-xl pl-12 pr-12 py-3 text-white placeholder:text-[#666] focus:border-[#D4AF37] transition-colors"
+                      placeholder="••••••••"
+                      data-testid="employee-password-input"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-[#666] hover:text-white"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={loginLoading}
+                  className="w-full btn-gold py-4 rounded-xl text-base font-semibold"
+                  data-testid="employee-login-btn"
+                >
+                  {loginLoading ? 'Ingresando...' : 'Ingresar'}
+                </Button>
+              </form>
             </div>
           ) : (
-            /* Employee Selected - Check In/Out */
+            /* Attendance Panel */
             <div className="glass-card rounded-2xl p-8">
               {/* Employee Info */}
               <div className="text-center mb-8">
                 <div className="w-20 h-20 rounded-full bg-[#D4AF37] flex items-center justify-center mx-auto mb-4">
                   <span className="text-3xl font-bold text-black">
-                    {selectedEmployee.full_name.charAt(0)}
+                    {user.name.charAt(0)}
                   </span>
                 </div>
-                <h2 className="text-2xl font-bold text-white font-['Syne']">{selectedEmployee.full_name}</h2>
-                <p className="text-[#A3A3A3]">{selectedEmployee.position}</p>
-                <p className="text-[#666] text-sm">ID: {selectedEmployee.internal_id}</p>
+                <h2 className="text-2xl font-bold text-white font-['Syne']">{user.name}</h2>
+                <p className="text-[#A3A3A3]">{user.workplace_name || 'Sin lugar asignado'}</p>
               </div>
 
               {/* Today's Status */}
@@ -315,22 +358,22 @@ const AttendancePage = () => {
                 {!todayAttendance ? (
                   <Button
                     onClick={handleCheckIn}
-                    disabled={loading || !selectedWorkplace}
+                    disabled={actionLoading || !selectedWorkplace}
                     className="w-full bg-green-600 hover:bg-green-500 text-white py-6 rounded-xl text-lg font-semibold"
                     data-testid="check-in-btn"
                   >
                     <LogIn size={24} className="mr-3" />
-                    {loading ? 'Registrando...' : 'Registrar Entrada'}
+                    {actionLoading ? 'Registrando...' : 'Registrar Entrada'}
                   </Button>
                 ) : !todayAttendance.check_out ? (
                   <Button
                     onClick={handleCheckOut}
-                    disabled={loading}
+                    disabled={actionLoading}
                     className="w-full bg-red-600 hover:bg-red-500 text-white py-6 rounded-xl text-lg font-semibold"
                     data-testid="check-out-btn"
                   >
                     <LogOut size={24} className="mr-3" />
-                    {loading ? 'Registrando...' : 'Registrar Salida'}
+                    {actionLoading ? 'Registrando...' : 'Registrar Salida'}
                   </Button>
                 ) : (
                   <div className="text-center py-4">
@@ -341,11 +384,11 @@ const AttendancePage = () => {
 
                 <Button
                   variant="outline"
-                  onClick={resetSelection}
+                  onClick={handleLogout}
                   className="w-full border-[#333] text-[#A3A3A3] hover:text-white py-4 rounded-xl"
-                  data-testid="back-btn"
+                  data-testid="logout-btn"
                 >
-                  Cambiar empleado
+                  Cerrar sesión
                 </Button>
               </div>
 
@@ -357,7 +400,7 @@ const AttendancePage = () => {
                     {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
                   </span>
                 ) : (
-                  <span className="text-red-400">Sin ubicación</span>
+                  <span className="text-red-400">{locationError || 'Obteniendo ubicación...'}</span>
                 )}
               </div>
             </div>
