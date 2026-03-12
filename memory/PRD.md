@@ -6,74 +6,93 @@ Web para taller mecánico de alta gama "Castrez Autrans" con sistema de gestión
 ## Stack Tecnológico
 - **Frontend**: React.js + Tailwind CSS + Framer Motion
 - **Backend**: FastAPI + MongoDB
-- **Autenticación**: JWT simple para admin
+- **Autenticación**: JWT simple para admin y empleados
 
-## Arquitectura
+---
 
-### Backend Endpoints
-- `/api/auth/login` - Login admin con JWT
-- `/api/auth/verify` - Verificar token
-- `/api/products/*` - CRUD productos
-- `/api/appointments/*` - CRUD citas
-- `/api/banners/*` - CRUD promociones
-- `/api/admin/employees/*` - CRUD empleados
-- `/api/admin/workplaces/*` - CRUD lugares de trabajo
-- `/api/admin/attendance/*` - CRUD asistencia
-- `/api/admin/stats/attendance` - Estadísticas
-- `/api/admin/reports/attendance/excel` - Exportar Excel
+## 🔐 CREDENCIALES DE ACCESO
 
-### Páginas Frontend
-- `/` - Homepage con video hero, ofertas de la semana, servicios, recambios, citas, ubicación
-- `/admin` - Panel de administración completo
-- `/asistencia` - Control de asistencia para empleados (tablet/PC del taller)
+### Panel de Administración (/admin)
+- **Email**: `admin@castrezautrans.com`
+- **Contraseña**: `Castrez2024!`
 
-## Credenciales Admin
-- **Email**: admin@castrezautrans.com
-- **Contraseña**: Castrez2024!
+### Empleados (/asistencia)
+| Empleado | Usuario | Contraseña |
+|----------|---------|------------|
+| Juan García López | `juan.garcia` | `Juan2024` |
+
+> Los demás empleados necesitan que les asignes usuario/contraseña desde el panel admin.
+
+---
+
+## URLs del Sistema
+
+| Módulo | URL |
+|--------|-----|
+| Web Pública | https://workshop-manager-44.preview.emergentagent.com |
+| Panel Admin | https://workshop-manager-44.preview.emergentagent.com/admin |
+| Control Asistencia (Empleados) | https://workshop-manager-44.preview.emergentagent.com/asistencia |
+
+---
 
 ## Funcionalidades Implementadas
 
 ### ✅ Web Pública
 - [x] Preloader animado con logo
 - [x] Hero section con video de fondo automotriz
-- [x] Sección de paquetes de mantenimiento (Essential, Advance, Premium)
-- [x] Ofertas de la Semana con descuentos
-- [x] Buscador de recambios por matrícula/referencia
+- [x] Sección de paquetes de mantenimiento
+- [x] **Ofertas de la Semana** con descuentos
+- [x] Buscador de recambios
 - [x] Formulario de citas
 - [x] Mapa de ubicación
-- [x] Botón flotante WhatsApp (+34 607665474)
-- [x] Banner promocional dinámico
+- [x] Botón flotante WhatsApp
 
 ### ✅ Panel de Administración
-- [x] Login con email/contraseña y validaciones
+- [x] **Login con email/contraseña** (validaciones incluidas)
 - [x] Gestión de Productos (CRUD)
-- [x] Gestión de Citas (ver, confirmar, completar, cancelar)
+- [x] Gestión de Citas
 - [x] Gestión de Promociones/Banners
-- [x] Gestión de Empleados (CRUD con ID, nombre, cargo, lugar, estado)
-- [x] Gestión de Lugares de Trabajo (con coordenadas GPS)
-- [x] Control de Asistencia (filtros, editar, eliminar)
-- [x] Reportes con gráficos (horas, puntualidad, rendimiento)
+- [x] **Gestión de Empleados** con usuario/contraseña
+- [x] Gestión de Lugares de Trabajo
+- [x] **Registrar Asistencia Manual** (crear, editar, eliminar, ver detalles)
+- [x] Reportes con gráficos
 - [x] Exportar a Excel
 
-### ✅ Sistema de Asistencia
-- [x] Búsqueda de empleados por nombre (autocompletado)
-- [x] Registro de entrada/salida
-- [x] Captura de geolocalización GPS
-- [x] Validación: no duplicados, entrada antes de salida
-- [x] Detección de retardos (después de 8:15)
-- [x] Reloj en tiempo real
+### ✅ Sistema de Asistencia para Empleados
+- [x] **Login con usuario/contraseña** (cada empleado tiene su cuenta)
+- [x] Registrar entrada (con geolocalización)
+- [x] Registrar salida (con geolocalización)
+- [x] Ver horas trabajadas del día
+- [x] Detección de retardos
+- [x] **Los empleados NO pueden editar ni eliminar** (solo registrar)
 
-## Datos de Prueba Creados
-- 1 lugar de trabajo (Taller Principal)
-- 3 empleados (Juan García, María Rodríguez, Carlos Martínez)
-- 4 productos con descuento (Ofertas de la semana)
-- 1 banner promocional activo
+---
+
+## Arquitectura
+
+### Backend Endpoints Principales
+```
+POST /api/auth/login           → Login admin
+POST /api/auth/employee/login  → Login empleado
+POST /api/auth/verify          → Verificar token
+
+GET/POST/PUT/DELETE /api/admin/employees   → CRUD empleados
+GET/POST/PUT/DELETE /api/admin/attendance  → CRUD asistencias
+GET/POST/PUT/DELETE /api/admin/workplaces  → CRUD lugares
+
+POST /api/attendance/check-in   → Empleado registra entrada
+POST /api/attendance/check-out  → Empleado registra salida
+
+GET /api/admin/reports/attendance/excel → Exportar Excel
+```
+
+---
 
 ## Próximas Mejoras Sugeridas
-- [ ] Notificaciones por email de citas
-- [ ] App móvil para empleados
-- [ ] Integración con facturación
-- [ ] Sistema de puntos de fidelidad para clientes
+- [ ] Notificaciones por email
+- [ ] Dashboard con estadísticas en tiempo real
+- [ ] Comparación de ubicación vs lugar asignado (alerta si no coincide)
 
-## Fecha de Implementación
-Enero 2026
+---
+
+Fecha de Implementación: Marzo 2026
