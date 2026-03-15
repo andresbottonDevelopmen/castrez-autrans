@@ -136,24 +136,28 @@ const AttendanceManager = () => {
 
   const exportToExcel = async () => {
     try {
-      const params = {};
-      if (filters.date_from) params.date_from = filters.date_from;
-      if (filters.date_to) params.date_to = filters.date_to;
+      const params = new URLSearchParams();
+      if (filters.date_from) params.append('date_from', filters.date_from);
+      if (filters.date_to) params.append('date_to', filters.date_to);
 
-      const response = await axios.get(`${API}/admin/reports/attendance/excel`, {
-        params,
-        responseType: 'blob'
+      const response = await fetch(`${API}/admin/reports/attendance/excel?${params.toString()}`, {
+        method: 'GET',
       });
       
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      if (!response.ok) throw new Error('Error al exportar');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `asistencia_${filters.date_from}_a_${filters.date_to}.xlsx`);
+      link.download = `asistencia_${filters.date_from}_a_${filters.date_to}.xlsx`;
       document.body.appendChild(link);
       link.click();
-      link.remove();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
       toast.success('Reporte descargado');
     } catch (error) {
+      console.error('Export error:', error);
       toast.error('Error al exportar');
     }
   };
