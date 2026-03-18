@@ -41,7 +41,8 @@ Web para taller mecanico de alta gama "Castrez Autrans" con sistema de gestion d
 
 ### Web Publica
 - [x] Preloader animado con logo
-- [x] Hero section con video de fondo automotriz
+- [x] Hero section con parallax + carrusel de imagenes (mecanico, motor, piezas, escape)
+- [x] Carrusel con 4 mensajes comerciales (recambios, precios, telefono, horario)
 - [x] Seccion de paquetes de mantenimiento con disclaimer legal
 - [x] Ofertas de la Semana (grid responsive: 2 cols mobile, 3 tablet, 4 desktop)
 - [x] Buscador de recambios con filtro por categorias

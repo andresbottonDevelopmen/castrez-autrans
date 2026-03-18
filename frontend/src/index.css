@@ -383,24 +383,42 @@ input::placeholder, textarea::placeholder {
   }
 }
 
-/* Hero section */
-.hero-section {
+/* Hero section - Parallax Carousel */
+.hero-parallax {
   position: relative;
   min-height: 100vh;
   min-height: 100dvh;
   overflow: hidden;
 }
 
-.hero-video {
+.hero-parallax-bg {
+  position: absolute;
+  top: -10%;
+  left: 0;
+  width: 100%;
+  height: 120%;
+  z-index: 0;
+}
+
+.hero-parallax-img {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  will-change: opacity, transform;
 }
 
-.hero-overlay {
+@media (max-width: 768px) {
+  .hero-parallax-img {
+    background-attachment: scroll;
+  }
+}
+
+.hero-parallax-overlay {
   position: absolute;
   top: 0;
   left: 0;
@@ -408,13 +426,15 @@ input::placeholder, textarea::placeholder {
   height: 100%;
   background: linear-gradient(
     to bottom,
-    rgba(5, 5, 5, 0.4) 0%,
-    rgba(5, 5, 5, 0.6) 50%,
+    rgba(5, 5, 5, 0.55) 0%,
+    rgba(5, 5, 5, 0.65) 40%,
+    rgba(5, 5, 5, 0.8) 70%,
     #050505 100%
   );
+  z-index: 1;
 }
 
-.hero-content {
+.hero-parallax-content {
   position: relative;
   z-index: 10;
   min-height: 100vh;
@@ -425,12 +445,6 @@ input::placeholder, textarea::placeholder {
   align-items: center;
   text-align: center;
   padding: 0 1rem;
-}
-
-@media (min-width: 768px) {
-  .hero-content {
-    padding: 0 2rem;
-  }
 }
 
 /* Package cards */
