@@ -29,9 +29,9 @@ Web para taller mecánico de alta gama "Castrez Autrans" con sistema de gestión
 
 | Módulo | URL |
 |--------|-----|
-| Web Pública | https://workshop-manager-44.preview.emergentagent.com |
-| Panel Admin | https://workshop-manager-44.preview.emergentagent.com/admin |
-| Control Asistencia (Empleados) | https://workshop-manager-44.preview.emergentagent.com/asistencia |
+| Web Pública | https://castrez-preview.preview.emergentagent.com |
+| Panel Admin | https://castrez-preview.preview.emergentagent.com/admin |
+| Control Asistencia (Empleados) | https://castrez-preview.preview.emergentagent.com/asistencia |
 
 ---
 
