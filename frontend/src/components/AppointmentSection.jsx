@@ -12,6 +12,8 @@ import { es } from 'date-fns/locale';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
+const WHATSAPP_NUMBER = '34613430084';
+
 const services = [
   { value: 'essential', label: 'Pack Essential - 79,90€' },
   { value: 'advance', label: 'Pack Advance - 149,90€' },
@@ -55,6 +57,21 @@ const AppointmentSection = () => {
       });
       
       toast.success('¡Cita solicitada con éxito! Te contactaremos pronto.');
+      
+      // Build WhatsApp message with appointment details
+      const serviceName = services.find(s => s.value === formData.service_type)?.label || formData.service_type;
+      const whatsappMessage = `Hola Castrez Autrans, acabo de solicitar una cita:\n\n` +
+        `*Nombre:* ${formData.name}\n` +
+        `*Teléfono:* ${formData.phone}\n` +
+        `*Matrícula:* ${formData.license_plate.toUpperCase()}\n` +
+        `*Servicio:* ${serviceName}\n` +
+        `*Fecha:* ${format(date, 'PPP', { locale: es })}\n` +
+        (formData.notes ? `*Notas:* ${formData.notes}\n` : '') +
+        `\n¿Me pueden confirmar disponibilidad?`;
+      
+      const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(whatsappMessage)}`;
+      window.open(whatsappUrl, '_blank');
+      
       setFormData({
         name: '',
         phone: '',
@@ -73,7 +90,7 @@ const AppointmentSection = () => {
   };
 
   return (
-    <section id="citas" className="py-24 md:py-32 px-6 md:px-12" data-testid="appointment-section">
+    <section id="citas" className="py-16 md:py-32 px-4 md:px-12" data-testid="appointment-section">
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           {/* Left - Info */}

@@ -6,6 +6,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
+import asyncio
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional
@@ -15,7 +16,7 @@ import httpx
 import io
 import xlsxwriter
 import jwt
-from datetime import datetime, timezone, timedelta
+import resend
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -35,6 +36,13 @@ ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'Castrez2024!')
 JWT_SECRET = os.environ.get('JWT_SECRET', 'castrez-autrans-jwt-secret-2024-secure')
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 24
+
+# Resend email config
+RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
+NOTIFICATION_EMAIL = os.environ.get('NOTIFICATION_EMAIL', '')
+WHATSAPP_NOTIFICATION_NUMBER = os.environ.get('WHATSAPP_NOTIFICATION_NUMBER', '')
+if RESEND_API_KEY:
+    resend.api_key = RESEND_API_KEY
 
 # Create the main app
 app = FastAPI()
@@ -278,6 +286,56 @@ def calculate_hours(check_in: str, check_out: str) -> float:
     except:
         return 0
 
+SERVICE_LABELS = {
+    'essential': 'Pack Essential - 79,90€',
+    'advance': 'Pack Advance - 149,90€',
+    'premium': 'Pack Premium - Desde 229,90€',
+    'diagnosis': 'Diagnosis Computarizada',
+    'brakes': 'Revisión de Frenos',
+    'other': 'Otro Servicio',
+}
+
+async def send_appointment_email(appointment_data: dict):
+    """Send email notification for new appointment"""
+    if not RESEND_API_KEY or not NOTIFICATION_EMAIL:
+        logger.warning("Resend not configured, skipping email")
+        return
+    
+    service_label = SERVICE_LABELS.get(appointment_data.get('service_type', ''), appointment_data.get('service_type', ''))
+    
+    html_content = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #1a1a1a; color: #f5f5f5; padding: 30px; border-radius: 12px;">
+        <div style="text-align: center; margin-bottom: 24px; border-bottom: 2px solid #D4AF37; padding-bottom: 16px;">
+            <h1 style="color: #D4AF37; margin: 0; font-size: 24px;">Castrez Autrans</h1>
+            <p style="color: #a3a3a3; margin: 4px 0 0;">Nueva Solicitud de Cita</p>
+        </div>
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr><td style="padding: 10px 0; color: #a3a3a3; width: 140px;">Cliente:</td><td style="padding: 10px 0; color: #fff; font-weight: bold;">{appointment_data.get('name', '')}</td></tr>
+            <tr><td style="padding: 10px 0; color: #a3a3a3;">Teléfono:</td><td style="padding: 10px 0; color: #fff;">{appointment_data.get('phone', '')}</td></tr>
+            <tr><td style="padding: 10px 0; color: #a3a3a3;">Email:</td><td style="padding: 10px 0; color: #fff;">{appointment_data.get('email', 'No proporcionado')}</td></tr>
+            <tr><td style="padding: 10px 0; color: #a3a3a3;">Matrícula:</td><td style="padding: 10px 0; color: #D4AF37; font-weight: bold; text-transform: uppercase;">{appointment_data.get('license_plate', '')}</td></tr>
+            <tr><td style="padding: 10px 0; color: #a3a3a3;">Servicio:</td><td style="padding: 10px 0; color: #fff;">{service_label}</td></tr>
+            <tr><td style="padding: 10px 0; color: #a3a3a3;">Fecha Preferida:</td><td style="padding: 10px 0; color: #fff;">{appointment_data.get('preferred_date', '')}</td></tr>
+            {'<tr><td style="padding: 10px 0; color: #a3a3a3;">Notas:</td><td style="padding: 10px 0; color: #fff;">' + appointment_data.get('notes', '') + '</td></tr>' if appointment_data.get('notes') else ''}
+        </table>
+        <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #333; text-align: center; color: #666; font-size: 12px;">
+            Recibido el {datetime.now(timezone.utc).strftime('%d/%m/%Y a las %H:%M')} UTC
+        </div>
+    </div>
+    """
+    
+    try:
+        params = {
+            "from": "Castrez Autrans <onboarding@resend.dev>",
+            "to": [NOTIFICATION_EMAIL],
+            "subject": f"Nueva Cita - {appointment_data.get('name', '')} | {appointment_data.get('license_plate', '').upper()}",
+            "html": html_content
+        }
+        await asyncio.to_thread(resend.Emails.send, params)
+        logger.info(f"Email sent for appointment: {appointment_data.get('name')}")
+    except Exception as e:
+        logger.error(f"Failed to send email: {str(e)}")
+
 # ============ PUBLIC ROUTES ============
 
 @api_router.get("/")
@@ -339,6 +397,10 @@ async def create_appointment(input: AppointmentCreate):
     appointment = Appointment(**input.model_dump())
     doc = serialize_doc(appointment.model_dump())
     await db.appointments.insert_one(doc)
+    
+    # Send email notification (fire and forget)
+    asyncio.create_task(send_appointment_email(input.model_dump()))
+    
     return appointment
 
 # Banner (Public)

@@ -41,14 +41,14 @@ const WeeklyDeals = () => {
   if (deals.length === 0) return null;
 
   return (
-    <section className="py-12 md:py-16 px-4 md:px-6 lg:px-12 bg-gradient-to-b from-[#050505] to-[#0A0A0A]" data-testid="weekly-deals-section">
+    <section className="py-10 md:py-16 px-4 md:px-6 lg:px-12 bg-gradient-to-b from-[#050505] to-[#0A0A0A]" data-testid="weekly-deals-section">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="flex items-center justify-between mb-6 md:mb-8"
+          className="flex items-center justify-between mb-5 md:mb-8"
         >
           <div className="flex items-center gap-2 md:gap-3">
             <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
@@ -68,13 +68,12 @@ const WeeklyDeals = () => {
           </a>
         </motion.div>
 
-        {/* Deals Grid for Mobile, Carousel for Desktop */}
+        {/* Deals Grid */}
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          className="grid grid-cols-2 gap-3 md:flex md:gap-5 md:overflow-x-auto md:pb-4 scrollbar-hide"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          className="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 md:gap-5"
         >
           {deals.map((product, index) => (
             <motion.div
@@ -83,7 +82,7 @@ const WeeklyDeals = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.05 }}
-              className="relative glass-card rounded-xl md:rounded-2xl p-3 md:p-5 hover:border-[#D4AF37]/50 transition-all group md:min-w-[260px] md:max-w-[280px] flex-shrink-0"
+              className="relative glass-card rounded-xl md:rounded-2xl p-3 md:p-5 hover:border-[#D4AF37]/50 transition-all group"
               data-testid={`deal-${product.id}`}
             >
               {/* Discount Badge */}

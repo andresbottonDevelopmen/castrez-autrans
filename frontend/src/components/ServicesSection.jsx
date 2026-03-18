@@ -62,7 +62,7 @@ const cardVariants = {
 
 const ServicesSection = () => {
   return (
-    <section id="servicios" className="py-24 md:py-32 px-6 md:px-12" data-testid="services-section">
+    <section id="servicios" className="py-16 md:py-32 px-4 md:px-12" data-testid="services-section">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div

@@ -3,7 +3,7 @@ import { MapPin, Clock, Phone, Mail } from 'lucide-react';
 
 const LocationSection = () => {
   return (
-    <section id="ubicacion" className="py-24 md:py-32 px-6 md:px-12 bg-[#0A0A0A]" data-testid="location-section">
+    <section id="ubicacion" className="py-16 md:py-32 px-4 md:px-12 bg-[#0A0A0A]" data-testid="location-section">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
@@ -14,7 +14,7 @@ const LocationSection = () => {
           className="text-center mb-16"
         >
           <p className="text-[#D4AF37] text-sm tracking-[0.3em] uppercase mb-4 font-medium">
-            EncúDentranos
+            EncuÉntranos
           </p>
           <h2 className="text-3xl md:text-5xl font-bold text-white mb-4 font-['Syne'] tracking-tight">
             Nuestra Ubicación

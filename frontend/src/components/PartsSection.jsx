@@ -70,7 +70,7 @@ const PartsSection = () => {
   };
 
   return (
-    <section id="recambios" className="py-24 md:py-32 px-6 md:px-12 bg-[#0A0A0A]" data-testid="parts-section">
+    <section id="recambios" className="py-16 md:py-32 px-4 md:px-12 bg-[#0A0A0A]" data-testid="parts-section">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
@@ -97,7 +97,7 @@ const PartsSection = () => {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="search-input-container mb-12"
+          className="search-input-container mb-8 md:mb-16"
         >
           <Search className="search-icon" size={22} />
           <input
@@ -115,13 +115,13 @@ const PartsSection = () => {
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          className="flex flex-wrap justify-center gap-4 mb-12"
+          className="flex flex-wrap justify-center gap-3 md:gap-4 mb-10 md:mb-14 px-2"
         >
           {categories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => handleCategoryClick(cat.id)}
-              className={`px-6 py-3 rounded-full text-sm font-medium transition-all ${
+              className={`px-4 py-2.5 md:px-6 md:py-3 rounded-full text-xs md:text-sm font-medium transition-all ${
                 selectedCategory === cat.id
                   ? 'bg-[#D4AF37] text-black'
                   : 'bg-[#1A1A1A] text-[#A3A3A3] hover:text-white hover:bg-[#262626]'
