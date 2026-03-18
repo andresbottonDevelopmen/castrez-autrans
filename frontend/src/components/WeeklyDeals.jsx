@@ -26,11 +26,11 @@ const WeeklyDeals = () => {
 
   if (loading) {
     return (
-      <section className="py-16 px-6 md:px-12 bg-gradient-to-b from-[#050505] to-[#0A0A0A]">
+      <section className="py-12 md:py-16 px-4 md:px-6 lg:px-12 bg-gradient-to-b from-[#050505] to-[#0A0A0A]">
         <div className="max-w-7xl mx-auto">
-          <div className="animate-pulse flex gap-6 overflow-hidden">
+          <div className="animate-pulse grid grid-cols-2 md:flex md:gap-6 gap-3 overflow-hidden">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="min-w-[280px] h-[350px] bg-[#1A1A1A] rounded-2xl" />
+              <div key={i} className="h-[280px] md:min-w-[280px] md:h-[350px] bg-[#1A1A1A] rounded-xl md:rounded-2xl" />
             ))}
           </div>
         </div>
@@ -41,61 +41,61 @@ const WeeklyDeals = () => {
   if (deals.length === 0) return null;
 
   return (
-    <section className="py-16 px-6 md:px-12 bg-gradient-to-b from-[#050505] to-[#0A0A0A]" data-testid="weekly-deals-section">
+    <section className="py-12 md:py-16 px-4 md:px-6 lg:px-12 bg-gradient-to-b from-[#050505] to-[#0A0A0A]" data-testid="weekly-deals-section">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="flex items-center justify-between mb-8"
+          className="flex items-center justify-between mb-6 md:mb-8"
         >
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center">
-              <Flame size={24} className="text-red-500" />
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
+              <Flame size={20} className="text-red-500 md:w-6 md:h-6" />
             </div>
             <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-white font-['Syne']">Ofertas de la Semana</h2>
-              <p className="text-[#A3A3A3] text-sm">Recambios con descuentos especiales</p>
+              <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-white font-['Syne']">Ofertas de la Semana</h2>
+              <p className="text-[#A3A3A3] text-xs md:text-sm">Descuentos especiales</p>
             </div>
           </div>
           <a
             href="#recambios"
-            className="hidden md:flex items-center gap-2 text-[#D4AF37] hover:text-white transition-colors"
+            className="hidden md:flex items-center gap-2 text-[#D4AF37] hover:text-white transition-colors text-sm"
           >
             Ver todos
-            <ArrowRight size={18} />
+            <ArrowRight size={16} />
           </a>
         </motion.div>
 
-        {/* Deals Carousel */}
+        {/* Deals Grid for Mobile, Carousel for Desktop */}
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide"
+          className="grid grid-cols-2 gap-3 md:flex md:gap-5 md:overflow-x-auto md:pb-4 scrollbar-hide"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {deals.map((product, index) => (
             <motion.div
               key={product.id}
-              initial={{ opacity: 0, x: 50 }}
-              whileInView={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-              className="min-w-[280px] md:min-w-[320px] glass-card rounded-2xl p-6 hover:border-[#D4AF37]/50 transition-all group flex-shrink-0"
+              transition={{ delay: index * 0.05 }}
+              className="relative glass-card rounded-xl md:rounded-2xl p-3 md:p-5 hover:border-[#D4AF37]/50 transition-all group md:min-w-[260px] md:max-w-[280px] flex-shrink-0"
               data-testid={`deal-${product.id}`}
             >
               {/* Discount Badge */}
               {product.discount_price && (
-                <div className="absolute top-4 right-4 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                <div className="absolute top-2 right-2 md:top-3 md:right-3 bg-red-500 text-white text-[10px] md:text-xs font-bold px-2 py-0.5 md:px-3 md:py-1 rounded-full z-10">
                   -{Math.round(((product.price - product.discount_price) / product.price) * 100)}%
                 </div>
               )}
 
               {/* Image */}
               {product.image_url ? (
-                <div className="aspect-square rounded-xl mb-4 overflow-hidden bg-[#1A1A1A]">
+                <div className="aspect-square rounded-lg md:rounded-xl mb-2 md:mb-4 overflow-hidden bg-[#1A1A1A]">
                   <img
                     src={product.image_url}
                     alt={product.name}
@@ -103,44 +103,44 @@ const WeeklyDeals = () => {
                   />
                 </div>
               ) : (
-                <div className="aspect-square rounded-xl mb-4 bg-gradient-to-br from-[#1A1A1A] to-[#0F0F0F] flex items-center justify-center">
-                  <Tag size={48} className="text-[#333]" />
+                <div className="aspect-square rounded-lg md:rounded-xl mb-2 md:mb-4 bg-gradient-to-br from-[#1A1A1A] to-[#0F0F0F] flex items-center justify-center">
+                  <Tag size={32} className="text-[#333] md:w-12 md:h-12" />
                 </div>
               )}
 
               {/* Badges */}
-              <div className="flex gap-2 mb-3">
+              <div className="flex flex-wrap gap-1 md:gap-2 mb-2">
                 {product.is_weekly_deal && (
-                  <span className="px-2 py-1 text-xs bg-red-500/20 text-red-400 rounded-full">
-                    Oferta Semanal
+                  <span className="px-1.5 py-0.5 md:px-2 md:py-1 text-[10px] md:text-xs bg-red-500/20 text-red-400 rounded-full">
+                    Oferta
                   </span>
                 )}
                 {product.is_reconditioned && (
-                  <span className="px-2 py-1 text-xs bg-green-500/20 text-green-400 rounded-full">
-                    Reacondicionado
+                  <span className="px-1.5 py-0.5 md:px-2 md:py-1 text-[10px] md:text-xs bg-green-500/20 text-green-400 rounded-full">
+                    Reacond.
                   </span>
                 )}
               </div>
 
               {/* Info */}
-              <h4 className="text-white font-semibold mb-1 line-clamp-2 group-hover:text-[#D4AF37] transition-colors">
+              <h4 className="text-white font-medium md:font-semibold text-sm md:text-base mb-1 line-clamp-2 group-hover:text-[#D4AF37] transition-colors leading-tight">
                 {product.name}
               </h4>
-              <p className="text-[#666] text-xs mb-3">Ref: {product.reference}</p>
+              <p className="text-[#666] text-[10px] md:text-xs mb-2 md:mb-3">Ref: {product.reference}</p>
 
               {/* Price */}
-              <div className="flex items-end gap-3">
+              <div className="flex items-end gap-2">
                 {product.discount_price ? (
                   <>
-                    <span className="text-2xl font-bold text-[#D4AF37] font-mono">
+                    <span className="text-lg md:text-xl font-bold text-[#D4AF37] font-mono">
                       {product.discount_price.toFixed(2)}€
                     </span>
-                    <span className="text-[#666] line-through text-sm">
+                    <span className="text-[#666] line-through text-xs md:text-sm">
                       {product.price.toFixed(2)}€
                     </span>
                   </>
                 ) : (
-                  <span className="text-2xl font-bold text-white font-mono">
+                  <span className="text-lg md:text-xl font-bold text-white font-mono">
                     {product.price.toFixed(2)}€
                   </span>
                 )}
@@ -150,13 +150,13 @@ const WeeklyDeals = () => {
         </motion.div>
 
         {/* Mobile view all link */}
-        <div className="md:hidden mt-6 text-center">
+        <div className="md:hidden mt-5 text-center">
           <a
             href="#recambios"
-            className="inline-flex items-center gap-2 text-[#D4AF37] hover:text-white transition-colors"
+            className="inline-flex items-center gap-2 text-[#D4AF37] hover:text-white transition-colors text-sm font-medium"
           >
             Ver todos los recambios
-            <ArrowRight size={18} />
+            <ArrowRight size={16} />
           </a>
         </div>
       </div>
