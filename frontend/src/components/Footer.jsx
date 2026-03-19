@@ -20,23 +20,28 @@ const Footer = () => {
             <h4 className="text-white font-semibold mb-4">Enlaces</h4>
             <ul className="space-y-2">
               <li>
-                <a href="#servicios" className="text-[#A3A3A3] text-sm hover:text-[#D4AF37] transition-colors">
+                <a href="/#servicios" className="text-[#A3A3A3] text-sm hover:text-[#D4AF37] transition-colors">
                   Servicios
                 </a>
               </li>
               <li>
-                <a href="#recambios" className="text-[#A3A3A3] text-sm hover:text-[#D4AF37] transition-colors">
+                <a href="/recambios" className="text-[#A3A3A3] text-sm hover:text-[#D4AF37] transition-colors">
                   Recambios
                 </a>
               </li>
               <li>
-                <a href="#citas" className="text-[#A3A3A3] text-sm hover:text-[#D4AF37] transition-colors">
+                <a href="/citas" className="text-[#A3A3A3] text-sm hover:text-[#D4AF37] transition-colors">
                   Reservar Cita
                 </a>
               </li>
               <li>
-                <a href="#ubicacion" className="text-[#A3A3A3] text-sm hover:text-[#D4AF37] transition-colors">
-                  Ubicación
+                <a href="/nosotros" className="text-[#A3A3A3] text-sm hover:text-[#D4AF37] transition-colors">
+                  Nosotros
+                </a>
+              </li>
+              <li>
+                <a href="/#ubicacion" className="text-[#A3A3A3] text-sm hover:text-[#D4AF37] transition-colors">
+                  Ubicaci&oacute;n
                 </a>
               </li>
             </ul>
@@ -47,8 +52,8 @@ const Footer = () => {
             <h4 className="text-white font-semibold mb-4">Contacto</h4>
             <ul className="space-y-2 text-[#A3A3A3] text-sm">
               <li>
-                <a href="tel:+34607665474" className="hover:text-[#D4AF37] transition-colors">
-                  +34 607 665 474
+                <a href="tel:+34613430084" className="hover:text-[#D4AF37] transition-colors">
+                  +34 613 430 084
                 </a>
               </li>
               <li>

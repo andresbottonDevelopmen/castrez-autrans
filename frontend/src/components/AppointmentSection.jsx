@@ -128,8 +128,8 @@ const AppointmentSection = () => {
                 </div>
                 <div>
                   <p className="text-white font-medium">Teléfono</p>
-                  <a href="tel:+34607665474" className="text-[#666] text-sm hover:text-[#D4AF37] transition-colors">
-                    +34 607 665 474
+                  <a href="tel:+34613430084" className="text-[#666] text-sm hover:text-[#D4AF37] transition-colors">
+                    +34 613 430 084
                   </a>
                 </div>
               </div>

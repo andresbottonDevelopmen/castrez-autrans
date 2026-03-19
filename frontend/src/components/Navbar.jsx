@@ -18,10 +18,11 @@ const Navbar = () => {
   }, []);
 
   const navLinks = [
-    { href: '#servicios', label: 'Servicios' },
-    { href: '#recambios', label: 'Recambios' },
-    { href: '#citas', label: 'Citas' },
-    { href: '#ubicacion', label: 'Ubicación' },
+    { href: '/#servicios', label: 'Servicios' },
+    { href: '/recambios', label: 'Recambios' },
+    { href: '/citas', label: 'Citas' },
+    { href: '/nosotros', label: 'Nosotros' },
+    { href: '/#ubicacion', label: 'Ubicaci\u00f3n' },
   ];
 
   return (
@@ -54,7 +55,7 @@ const Navbar = () => {
               </a>
             ))}
             <a
-              href="#citas"
+              href="/citas"
               className="btn-gold px-6 py-2.5 rounded-full text-sm font-semibold"
               data-testid="cta-button"
             >
@@ -94,7 +95,7 @@ const Navbar = () => {
                 </a>
               ))}
               <a
-                href="#citas"
+                href="/citas"
                 className="block btn-gold px-6 py-3 rounded-full text-sm font-semibold text-center mt-4"
                 onClick={() => setMobileMenuOpen(false)}
               >

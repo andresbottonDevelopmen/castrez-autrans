@@ -3,10 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Preloader from '@/components/Preloader';
 import Navbar from '@/components/Navbar';
 import HeroSection from '@/components/HeroSection';
-import WeeklyDeals from '@/components/WeeklyDeals';
 import ServicesSection from '@/components/ServicesSection';
-import PartsSection from '@/components/PartsSection';
-import AppointmentSection from '@/components/AppointmentSection';
 import LocationSection from '@/components/LocationSection';
 import Footer from '@/components/Footer';
 import WhatsAppButton from '@/components/WhatsAppButton';
@@ -37,10 +34,7 @@ const HomePage = () => {
         <Navbar />
         <PromoBanner />
         <HeroSection />
-        <WeeklyDeals />
         <ServicesSection />
-        <PartsSection />
-        <AppointmentSection />
         <LocationSection />
         <Footer />
         <WhatsAppButton />

@@ -124,7 +124,7 @@ const HeroSection = () => {
           {/* CTA Buttons - always visible */}
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center">
             <motion.a
-              href="#citas"
+              href="/citas"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="btn-gold px-7 py-3.5 md:px-8 md:py-4 rounded-full text-sm md:text-base font-semibold w-full sm:w-auto text-center"
@@ -133,7 +133,7 @@ const HeroSection = () => {
               Solicitar Cita
             </motion.a>
             <motion.a
-              href="#servicios"
+              href="/#servicios"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="px-7 py-3.5 md:px-8 md:py-4 rounded-full text-sm md:text-base font-semibold border border-white/20 text-white hover:bg-white/10 transition-colors w-full sm:w-auto text-center"
